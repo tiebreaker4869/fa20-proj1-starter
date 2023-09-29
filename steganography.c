@@ -18,16 +18,45 @@
 #include <inttypes.h>
 #include "imageloader.h"
 
+// build whtie/black color
+static Color* buildBinaryColor(uint8_t binary) {
+	uint8_t val = 255 * binary;
+	Color* c = (Color *) malloc(sizeof(Color));
+	c->R = val;
+	c->G = val;
+	c->B = val;
+	return c;
+}
+
 //Determines what color the cell at the given row/col should be. This should not affect Image, and should allocate space for a new Color.
 Color *evaluateOnePixel(Image *image, int row, int col)
 {
 	//YOUR CODE HERE
+	Color* c = (Color *) malloc(sizeof(Color));
+	*c = image->image[row][col];
+	return c;
 }
 
 //Given an image, creates a new image extracting the LSB of the B channel.
 Image *steganography(Image *image)
 {
 	//YOUR CODE HERE
+	Image* newImage = (Image *) malloc(sizeof(Image));
+	newImage->rows = image->rows;
+	newImage->cols = image->cols;
+	newImage->image = (Color **) malloc(sizeof(Color *) * newImage->rows);
+	for (uint32_t i = 0; i < newImage->rows; i++) {
+		newImage->image[i] = (Color *) malloc(sizeof(Color) * newImage->cols);
+		for (uint32_t j = 0; j < newImage->cols; j++) {
+			Color* c = evaluateOnePixel(image, i, j);
+			Color* binaryPixel = buildBinaryColor(c->B & 1);
+			newImage->image[i][j] = *binaryPixel;
+			free(c);
+			free(binaryPixel);
+		}
+	}
+
+	return newImage;
 }
 
 /*
@@ -46,4 +75,16 @@ Make sure to free all memory before returning!
 int main(int argc, char **argv)
 {
 	//YOUR CODE HERE
+	if (argc != 2) {
+		printf("Usage: ./steganography <filename>\n");
+		exit(-1);
+	}
+
+	Image* image = readData(argv[1]);
+	Image* newImage = steganography(image);
+	writeData(newImage);
+	freeImage(image);
+	freeImage(newImage);
+
+	return 0;
 }
