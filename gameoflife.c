@@ -17,13 +17,51 @@
 #include <inttypes.h>
 #include "imageloader.h"
 
+static uint32_t dx[8] = {1, -1, 1, 1, 0, 0, -1, -1};
+
+static uint32_t dy[8] = {0, 0, 1, -1, 1, -1, 1, -1};
+
+static uint8_t evaluateChannelOfOneCell(Image* image, int row, int col, uint8_t channel) {
+	uint8_t alive = 0;
+	for (uint32_t i = 0; i < 8; i ++) {
+		uint32_t x = row + dx[i], y = col + dy[i];
+		x = (x + image->rows) % image->rows, y = (y + image->cols) % image->cols;
+		Color c = image->image[x][y];
+		uint8_t scale = *(((uint8_t*) (&c)) + channel);
+		if (scale != 0) {
+			alive ++;
+		}
+	}
+
+	return alive;
+}
+
 //Determines what color the cell at the given row/col should be. This function allocates space for a new Color.
 //Note that you will need to read the eight neighbors of the cell in question. The grid "wraps", so we treat the top row as adjacent to the bottom row
 //and the left column as adjacent to the right column.
 Color *evaluateOneCell(Image *image, int row, int col, uint32_t rule)
 {
 	//YOUR CODE HERE
-	
+	Color* c = (Color*) malloc(sizeof(Color));
+	for (uint8_t channel = 0; channel < 3; channel ++) {
+		uint8_t alive = evaluateChannelOfOneCell(image, row, col, channel);
+		uint8_t* result_c = (uint8_t*) c;
+		uint8_t* image_c = (uint8_t*) (&image->image[row][col]);
+		uint8_t scale = *(image_c + channel);
+		uint8_t result_scale = 0;
+		if (scale == 0) {
+			if ((rule >> alive) & 1) {
+				result_scale = 255;
+			}
+		} else {
+			if ((rule >> (alive + 9)) & 1) {
+				result_scale = 255;
+			}
+		}
+		*(result_c + channel) = result_scale;
+	}
+
+	return c;
 }
 
 //The main body of Life; given an image and a rule, computes one iteration of the Game of Life.
@@ -73,7 +111,8 @@ int main(int argc, char **argv)
 	}
 
 	Image* image = readData(argv[1]);
-	Image* nextImage = life(image, atoi(argv[2]));
+	uint32_t rule = strtol(argv[2], NULL, 0);
+	Image* nextImage = life(image,  rule);
 	writeData(nextImage);
 	freeImage(image);
 	freeImage(nextImage);
