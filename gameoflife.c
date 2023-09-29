@@ -23,6 +23,7 @@
 Color *evaluateOneCell(Image *image, int row, int col, uint32_t rule)
 {
 	//YOUR CODE HERE
+	
 }
 
 //The main body of Life; given an image and a rule, computes one iteration of the Game of Life.
@@ -30,6 +31,22 @@ Color *evaluateOneCell(Image *image, int row, int col, uint32_t rule)
 Image *life(Image *image, uint32_t rule)
 {
 	//YOUR CODE HERE
+	// initialize new image
+	Image* newImage = (Image*) malloc(sizeof(Image));
+	newImage->rows = image->rows;
+	newImage->cols = image->cols;
+	newImage->image = (Color **) malloc(sizeof(Color*) * newImage->rows);
+	// iterate over original image to generate new image content
+	for (uint32_t i = 0; i < image->rows; i ++) {
+		newImage->image[i] = (Color*) malloc(sizeof(Color) * newImage->cols);
+		for (uint32_t j = 0; j < image->cols; j ++) {
+			Color* newColor = evaluateOneCell(image, i, j, rule);
+			newImage->image[i][j] = *newColor;
+			free(newColor);
+		}
+	}
+
+	return newImage;
 }
 
 /*
@@ -50,4 +67,16 @@ You may find it useful to copy the code from steganography.c, to start.
 int main(int argc, char **argv)
 {
 	//YOUR CODE HERE
+	if (argc != 3) {
+		printf("Usage: ./gameoflife <filename> <rule>\n");
+		exit(-1);
+	}
+
+	Image* image = readData(argv[1]);
+	Image* nextImage = life(image, atoi(argv[2]));
+	writeData(nextImage);
+	freeImage(image);
+	freeImage(nextImage);
+
+	return 0;
 }
